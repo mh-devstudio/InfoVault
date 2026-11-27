@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>তথ্য ব্যবস্থাপনা সফটওয়্যার</title>
+  <title>InfoVault - তথ্য ব্যবস্থাপনা সফটওয়্যার</title>
   <style>
     * {
       box-sizing: border-box;
@@ -77,6 +77,16 @@
     .btn-secondary:hover {
       background-color: #1a252f;
     }
+    .btn-link {
+      background-color: transparent;
+      color: #1a73e8;
+      padding: 6px;
+      font-size: 14px;
+      text-decoration: underline;
+    }
+    .btn-link:hover {
+      background-color: #f0f6ff;
+    }
     .btn-logout {
       background-color: #e74c3c;
       padding: 8px 12px;
@@ -86,6 +96,16 @@
     }
     .btn-logout:hover {
       background-color: #c0392b;
+    }
+    .info-box {
+      background: #e8f4fd;
+      border: 1px solid #90caf9;
+      color: #0b4f8a;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      text-align: center;
     }
     .top-bar {
       display: flex;
@@ -97,6 +117,7 @@
       margin-bottom: 18px;
       font-size: 14px;
       color: #2c3e50;
+      gap: 8px;
     }
     .result-list {
       display: flex;
@@ -171,23 +192,49 @@
 <body>
 
   <div class="app-container">
-    <h2>তথ্য ব্যবস্থাপনা সফটওয়্যার</h2>
+    <h2>InfoVault</h2>
 
     <!-- লগ ইন / রেজিস্টার অংশ -->
     <div id="authSection">
-      <div class="section">
+      <div class="section" id="loginRegisterBox">
         <h3 id="authTitle">লগ ইন করুন</h3>
-        <input type="tel" id="authPhone" placeholder="মোবাইল নাম্বার (যেমন: 017XXXXXXXX)...">
+
+        <!-- শুধু নতুন অ্যাকাউন্ট তৈরির সময় দেখাবে -->
+        <div id="registerExtraFields" class="hidden">
+          <input type="text" id="regFullName" placeholder="আপনার পূর্ণ নাম...">
+        </div>
+
+        <input type="email" id="authEmail" placeholder="ইমেইল ঠিকানা (যেমন: name@gmail.com)...">
         <input type="password" id="authPassword" placeholder="পাসওয়ার্ড লিখুন...">
         <button id="authSubmitBtn" onclick="handleAuth()">লগ ইন করুন</button>
         <button type="button" class="btn-secondary" id="toggleAuthBtn" onclick="toggleAuthMode()">নতুন অ্যাকাউন্ট তৈরি করুন</button>
+        <button type="button" class="btn-link" onclick="openForgotSection()">পাসওয়ার্ড ভুলে গেছেন? (Forgot Password)</button>
+      </div>
+
+      <!-- পাসওয়ার্ড রিসেট / ফরগেট অংশ -->
+      <div class="section hidden" id="forgotPasswordBox">
+        <h3>পাসওয়ার্ড রিসেট করুন</h3>
+        <input type="email" id="resetEmail" placeholder="রেজিস্টার করা ইমেইল ঠিকানা...">
+        <button type="button" class="btn-secondary" onclick="sendResetCode()">ইমেইলে কোড পাঠান</button>
+
+        <div id="codeSentBox" class="info-box hidden">
+          আপনার ইমেইলে ৬ সংখ্যার ভেরিফিকেশন কোড পাঠানো হয়েছে (Inbox অথবা Spam ফোল্ডার চেক করুন)। কোডটি ১০ মিনিট কার্যকর থাকবে।
+        </div>
+
+        <input type="text" id="resetCodeInput" placeholder="ইমেইলে আসা ৬ সংখ্যার কোড লিখুন...">
+        <input type="password" id="newPasswordInput" placeholder="নতুন পাসওয়ার্ড লিখুন...">
+        <button type="button" onclick="submitNewPassword()">পাসওয়ার্ড পরিবর্তন করুন</button>
+        <button type="button" class="btn-link" onclick="backToLogin()">লগ ইন পেজে ফিরে যান</button>
       </div>
     </div>
 
     <!-- লগ ইন করার পর মূল সফটওয়্যার অংশ -->
     <div id="mainAppSection" class="hidden">
       <div class="top-bar">
-        <div><strong>অ্যাকাউন্ট:</strong> <span id="currentUserPhone"></span></div>
+        <div>
+          <strong>অ্যাকাউন্ট:</strong> <span id="currentUserEmail"></span>
+          <div id="currentUserMeta" style="font-size: 12px; color: #555; margin-top: 2px;"></div>
+        </div>
         <button class="btn-logout" onclick="logoutUser()">লগ আউট</button>
       </div>
 
@@ -223,12 +270,13 @@
   <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwF0PYX9RMz2njhd46Ya-jWso9Bq31eFVaikRK_tj-Ut4wL6lHbpQBmyYbp0gLwrq32/exec";
     let isRegisterMode = false;
-    let currentPhone = localStorage.getItem("loggedInPhone") || "";
+    let currentEmail = localStorage.getItem("loggedInEmail") || "";
+    let currentFullName = localStorage.getItem("loggedInFullName") || "";
     let globalDataList = [];
 
     window.onload = function() {
-      if (currentPhone) {
-        showMainApp(currentPhone);
+      if (currentEmail) {
+        showMainApp(currentEmail, currentFullName);
       } else {
         showAuthSection();
       }
@@ -237,12 +285,96 @@
     function showAuthSection() {
       document.getElementById("authSection").classList.remove("hidden");
       document.getElementById("mainAppSection").classList.add("hidden");
+      backToLogin();
     }
 
-    function showMainApp(phone) {
-      currentPhone = phone;
-      localStorage.setItem("loggedInPhone", phone);
-      document.getElementById("currentUserPhone").innerText = phone;
+    function openForgotSection() {
+      document.getElementById("loginRegisterBox").classList.add("hidden");
+      document.getElementById("forgotPasswordBox").classList.remove("hidden");
+      document.getElementById("codeSentBox").classList.add("hidden");
+      document.getElementById("resetEmail").value = document.getElementById("authEmail").value.trim();
+      document.getElementById("resetCodeInput").value = "";
+      document.getElementById("newPasswordInput").value = "";
+    }
+
+    function backToLogin() {
+      document.getElementById("forgotPasswordBox").classList.add("hidden");
+      document.getElementById("loginRegisterBox").classList.remove("hidden");
+    }
+
+    async function sendResetCode() {
+      let email = document.getElementById("resetEmail").value.trim().toLowerCase();
+      if (!email) {
+        alert("দয়া করে ইমেইল ঠিকানা দিন!");
+        return;
+      }
+
+      try {
+        alert("ইমেইলে কোড পাঠানো হচ্ছে, অপেক্ষা করুন...");
+        let res = await fetch(WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "send_reset_code", email: email })
+        });
+        let result = await res.json();
+
+        if (result.status === "success") {
+          document.getElementById("codeSentBox").classList.remove("hidden");
+          alert(result.message || "আপনার ইমেইলে কোড পাঠানো হয়েছে!");
+        } else {
+          alert(result.message || "কোড পাঠানো যায়নি!");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("সার্ভারে সংযোগ স্থাপন করা যায়নি।");
+      }
+    }
+
+    async function submitNewPassword() {
+      let email = document.getElementById("resetEmail").value.trim().toLowerCase();
+      let code = document.getElementById("resetCodeInput").value.trim();
+      let newPassword = document.getElementById("newPasswordInput").value.trim();
+
+      if (!email || !code || !newPassword) {
+        alert("দয়া করে ইমেইল, কোড এবং নতুন পাসওয়ার্ড দিন!");
+        return;
+      }
+
+      try {
+        let res = await fetch(WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "reset_password",
+            email: email,
+            code: code,
+            newPassword: newPassword
+          })
+        });
+        let result = await res.json();
+
+        if (result.status === "success") {
+          alert("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! এখন নতুন পাসওয়ার্ড দিয়ে লগ ইন করুন।");
+          document.getElementById("authEmail").value = email;
+          document.getElementById("authPassword").value = "";
+          backToLogin();
+        } else {
+          alert(result.message || "পাসওয়ার্ড পরিবর্তন করা যায়নি!");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("সার্ভারে সংযোগ স্থাপন করা যায়নি।");
+      }
+    }
+
+    function showMainApp(email, fullName) {
+      currentEmail = email;
+      currentFullName = fullName || "";
+
+      localStorage.setItem("loggedInEmail", email);
+      localStorage.setItem("loggedInFullName", currentFullName);
+
+      document.getElementById("currentUserEmail").innerText = email;
+      document.getElementById("currentUserMeta").innerText = currentFullName ? currentFullName : "";
+
       document.getElementById("authSection").classList.add("hidden");
       document.getElementById("mainAppSection").classList.remove("hidden");
       fetchAllData();
@@ -253,31 +385,49 @@
       document.getElementById("authTitle").innerText = isRegisterMode ? "নতুন অ্যাকাউন্ট তৈরি করুন" : "লগ ইন করুন";
       document.getElementById("authSubmitBtn").innerText = isRegisterMode ? "রেজিস্টার করুন" : "লগ ইন করুন";
       document.getElementById("toggleAuthBtn").innerText = isRegisterMode ? "আগে থেকেই অ্যাকাউন্ট আছে? লগ ইন করুন" : "নতুন অ্যাকাউন্ট তৈরি করুন";
+
+      if (isRegisterMode) {
+        document.getElementById("registerExtraFields").classList.remove("hidden");
+      } else {
+        document.getElementById("registerExtraFields").classList.add("hidden");
+      }
     }
 
     async function handleAuth() {
-      let phone = document.getElementById("authPhone").value.trim();
+      let fullName = document.getElementById("regFullName").value.trim();
+      let email = document.getElementById("authEmail").value.trim().toLowerCase();
       let password = document.getElementById("authPassword").value.trim();
 
-      if (!phone || !password) {
-        alert("দয়া করে মোবাইল নাম্বার এবং পাসওয়ার্ড দিন!");
-        return;
+      if (isRegisterMode) {
+        if (!fullName || !email || !password) {
+          alert("দয়া করে পূর্ণ নাম, ইমেইল এবং পাসওয়ার্ড দিন!");
+          return;
+        }
+      } else {
+        if (!email || !password) {
+          alert("দয়া করে ইমেইল এবং পাসওয়ার্ড দিন!");
+          return;
+        }
       }
 
       let action = isRegisterMode ? "register" : "login";
+      let payload = isRegisterMode
+        ? { action: action, fullName: fullName, email: email, password: password }
+        : { action: action, email: email, password: password };
 
       try {
         let res = await fetch(WEB_APP_URL, {
           method: "POST",
-          body: JSON.stringify({ action: action, phone: phone, password: password })
+          body: JSON.stringify(payload)
         });
         let result = await res.json();
 
         if (result.status === "success") {
-          document.getElementById("authPhone").value = "";
+          document.getElementById("regFullName").value = "";
+          document.getElementById("authEmail").value = "";
           document.getElementById("authPassword").value = "";
           alert(isRegisterMode ? "অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!" : "সফলভাবে লগ ইন হয়েছে!");
-          showMainApp(phone);
+          showMainApp(result.email || email, result.fullName || fullName);
         } else {
           alert(result.message || "সমস্যা হয়েছে!");
         }
@@ -288,17 +438,19 @@
     }
 
     function logoutUser() {
-      localStorage.removeItem("loggedInPhone");
-      currentPhone = "";
+      localStorage.removeItem("loggedInEmail");
+      localStorage.removeItem("loggedInFullName");
+      currentEmail = "";
+      currentFullName = "";
       globalDataList = [];
       resetForm();
       showAuthSection();
     }
 
     async function fetchAllData() {
-      if (!currentPhone) return;
+      if (!currentEmail) return;
       try {
-        let response = await fetch(WEB_APP_URL + "?phone=" + encodeURIComponent(currentPhone));
+        let response = await fetch(WEB_APP_URL + "?email=" + encodeURIComponent(currentEmail));
         let resultData = await response.json();
         if (resultData.status === "success") {
           globalDataList = resultData.data;
@@ -310,7 +462,7 @@
     }
 
     async function saveData() {
-      if (!currentPhone) return;
+      if (!currentEmail) return;
 
       let editIndex = document.getElementById('editIndex').value;
       let officeName = document.getElementById('officeInput').value.trim();
@@ -330,7 +482,7 @@
 
       let formData = {
         action: "save",
-        phone: currentPhone,
+        email: currentEmail,
         officeName: officeName,
         userId: userId || "প্রযোজ্য নয়",
         postDesignation: postDesignation || "প্রযোজ্য নয়",
@@ -338,8 +490,7 @@
         linkUrl: linkUrl || "",
         smsInfo: smsInfo || "প্রযোজ্য নয়",
         examStatus: examStatus,
-        rowIndex: targetItem ? targetItem.rowIndex : "",
-        sourceSheet: targetItem ? (targetItem.sourceSheet || "Records") : "Records"
+        rowIndex: targetItem ? targetItem.rowIndex : ""
       };
 
       try {
@@ -381,14 +532,13 @@
     }
 
     async function deleteData(index) {
-      if (!currentPhone) return;
+      if (!currentEmail) return;
       if (confirm("আপনি কি নিশ্চিতভাবে এই তথ্যটি মুছে ফেলতে চান?")) {
         let targetItem = globalDataList[index];
         let formData = {
           action: "delete",
-          phone: currentPhone,
-          rowIndex: targetItem.rowIndex,
-          sourceSheet: targetItem.sourceSheet || "Records"
+          email: currentEmail,
+          rowIndex: targetItem.rowIndex
         };
         try {
           alert("মুছে ফেলা হচ্ছে, অপেক্ষা করুন...");
