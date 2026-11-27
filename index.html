@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>তথ্য ব্যবস্থাপনা সফটওয়্যার</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f4f7f6;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 500px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    h2, h3 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .section {
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 10px 15px;
+      font-size: 15px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+      margin-bottom: 10px;
+      background-color: #fff;
+    }
+    textarea {
+      resize: vertical;
+      height: 80px;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #4CAF50;
+    }
+    .file-upload-label {
+      display: block;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .btn-secondary {
+      background-color: #2c3e50;
+    }
+    .btn-secondary:hover {
+      background-color: #1a252f;
+    }
+    .btn-logout {
+      background-color: #e74c3c;
+      padding: 8px 12px;
+      font-size: 13px;
+      width: auto;
+      margin-bottom: 0;
+    }
+    .btn-logout:hover {
+      background-color: #c0392b;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f0f4f8;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      font-size: 14px;
+      color: #2c3e50;
+    }
+    .result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card {
+      background: #fdfdfd;
+      border-left: 5px solid #4CAF50;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .card h3 {
+      text-align: left;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+    .card p {
+      color: #555;
+      font-size: 14px;
+      margin: 3px 0;
+      word-break: break-word;
+    }
+    .card a {
+      color: #1a73e8;
+      text-decoration: none;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 4px;
+      margin-top: 5px;
+    }
+    .status-ongoing { background-color: #e6f4ea; color: #137333; }
+    .status-not { background-color: #fce8e6; color: #c5221f; }
+    .status-postponed { background-color: #fef7e0; color: #b06000; }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .btn-edit {
+      background-color: #f39c12;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+    .btn-edit:hover {
+      background-color: #d68910;
+    }
+    .btn-delete {
+      background-color: #e74c3c;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+    .btn-delete:hover {
+      background-color: #c0392b;
+    }
+    .no-result {
+      text-align: center;
+      color: #888;
+      font-size: 15px;
+      padding: 10px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <h2>তথ্য ব্যবস্থাপনা সফটওয়্যার</h2>
+
+    <!-- লগ ইন / রেজিস্টার অংশ -->
+    <div id="authSection">
+      <div class="section">
+        <h3 id="authTitle">লগ ইন করুন</h3>
+        <input type="tel" id="authPhone" placeholder="মোবাইল নাম্বার (যেমন: 017XXXXXXXX)...">
+        <input type="password" id="authPassword" placeholder="পাসওয়ার্ড লিখুন...">
+        <button id="authSubmitBtn" onclick="handleAuth()">লগ ইন করুন</button>
+        <button type="button" class="btn-secondary" id="toggleAuthBtn" onclick="toggleAuthMode()">নতুন অ্যাকাউন্ট তৈরি করুন</button>
+      </div>
+    </div>
+
+    <!-- লগ ইন করার পর মূল সফটওয়্যার অংশ -->
+    <div id="mainAppSection" class="hidden">
+      <div class="top-bar">
+        <div><strong>অ্যাকাউন্ট:</strong> <span id="currentUserPhone"></span></div>
+        <button class="btn-logout" onclick="logoutUser()">লগ আউট</button>
+      </div>
+
+      <div class="section">
+        <h3 id="formTitle">নতুন তথ্য যোগ করুন</h3>
+        <input type="hidden" id="editIndex" value="-1">
+        <input type="text" id="officeInput" placeholder="অফিস নাম...">
+        <input type="text" id="userIdInput" placeholder="User ID...">
+        <input type="text" id="designationInput" placeholder="পদবি নাম...">
+        <input type="text" id="postCountInput" placeholder="পদ সংখ্যা...">
+        <input type="text" id="linkInput" placeholder="Link (URL)...">
+        <textarea id="smsInput" placeholder="SMS Information লিখুন..."></textarea>
+
+        <label class="file-upload-label">পরীক্ষার অবস্থা নির্বাচন করুন:</label>
+        <select id="examStatusInput">
+          <option value="পরীক্ষা হচ্ছে">পরীক্ষা হচ্ছে</option>
+          <option value="পরীক্ষা হয়নি">পরীক্ষা হয়নি</option>
+          <option value="পরীক্ষা স্থগিত">পরীক্ষা স্থগিত</option>
+        </select>
+
+        <button id="saveBtn" onclick="saveData()">গুগল শিটে সেভ করুন</button>
+      </div>
+
+      <div class="section">
+        <h3>তথ্য অনুসন্ধান</h3>
+        <input type="text" id="searchInput" placeholder="অফিস নাম দিয়ে সার্চ করুন..." onkeyup="searchData()">
+      </div>
+
+      <div id="resultContainer" class="result-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwF0PYX9RMz2njhd46Ya-jWso9Bq31eFVaikRK_tj-Ut4wL6lHbpQBmyYbp0gLwrq32/exec";
+    let isRegisterMode = false;
+    let currentPhone = localStorage.getItem("loggedInPhone") || "";
+    let globalDataList = [];
+
+    window.onload = function() {
+      if (currentPhone) {
+        showMainApp(currentPhone);
+      } else {
+        showAuthSection();
+      }
+    };
+
+    function showAuthSection() {
+      document.getElementById("authSection").classList.remove("hidden");
+      document.getElementById("mainAppSection").classList.add("hidden");
+    }
+
+    function showMainApp(phone) {
+      currentPhone = phone;
+      localStorage.setItem("loggedInPhone", phone);
+      document.getElementById("currentUserPhone").innerText = phone;
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("mainAppSection").classList.remove("hidden");
+      fetchAllData();
+    }
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      document.getElementById("authTitle").innerText = isRegisterMode ? "নতুন অ্যাকাউন্ট তৈরি করুন" : "লগ ইন করুন";
+      document.getElementById("authSubmitBtn").innerText = isRegisterMode ? "রেজিস্টার করুন" : "লগ ইন করুন";
+      document.getElementById("toggleAuthBtn").innerText = isRegisterMode ? "আগে থেকেই অ্যাকাউন্ট আছে? লগ ইন করুন" : "নতুন অ্যাকাউন্ট তৈরি করুন";
+    }
+
+    async function handleAuth() {
+      let phone = document.getElementById("authPhone").value.trim();
+      let password = document.getElementById("authPassword").value.trim();
+
+      if (!phone || !password) {
+        alert("দয়া করে মোবাইল নাম্বার এবং পাসওয়ার্ড দিন!");
+        return;
+      }
+
+      let action = isRegisterMode ? "register" : "login";
+
+      try {
+        let res = await fetch(WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: action, phone: phone, password: password })
+        });
+        let result = await res.json();
+
+        if (result.status === "success") {
+          document.getElementById("authPhone").value = "";
+          document.getElementById("authPassword").value = "";
+          alert(isRegisterMode ? "অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!" : "সফলভাবে লগ ইন হয়েছে!");
+          showMainApp(phone);
+        } else {
+          alert(result.message || "সমস্যা হয়েছে!");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("সার্ভারে সংযোগ স্থাপন করা যায়নি।");
+      }
+    }
+
+    function logoutUser() {
+      localStorage.removeItem("loggedInPhone");
+      currentPhone = "";
+      globalDataList = [];
+      resetForm();
+      showAuthSection();
+    }
+
+    async function fetchAllData() {
+      if (!currentPhone) return;
+      try {
+        let response = await fetch(WEB_APP_URL + "?phone=" + encodeURIComponent(currentPhone));
+        let resultData = await response.json();
+        if (resultData.status === "success") {
+          globalDataList = resultData.data;
+          displayResults(globalDataList);
+        }
+      } catch (error) {
+        console.error("তথ্য লোড করতে সমস্যা:", error);
+      }
+    }
+
+    async function saveData() {
+      if (!currentPhone) return;
+
+      let editIndex = document.getElementById('editIndex').value;
+      let officeName = document.getElementById('officeInput').value.trim();
+      let userId = document.getElementById('userIdInput').value.trim();
+      let postDesignation = document.getElementById('designationInput').value.trim();
+      let postCount = document.getElementById('postCountInput').value.trim();
+      let linkUrl = document.getElementById('linkInput').value.trim();
+      let smsInfo = document.getElementById('smsInput').value.trim();
+      let examStatus = document.getElementById('examStatusInput').value;
+
+      if (officeName === "") {
+        alert("দয়া করে অন্তত অফিস নাম লিখুন!");
+        return;
+      }
+
+      let targetItem = editIndex === "-1" ? null : globalDataList[editIndex];
+
+      let formData = {
+        action: "save",
+        phone: currentPhone,
+        officeName: officeName,
+        userId: userId || "প্রযোজ্য নয়",
+        postDesignation: postDesignation || "প্রযোজ্য নয়",
+        postCount: postCount || "প্রযোজ্য নয়",
+        linkUrl: linkUrl || "",
+        smsInfo: smsInfo || "প্রযোজ্য নয়",
+        examStatus: examStatus,
+        rowIndex: targetItem ? targetItem.rowIndex : "",
+        sourceSheet: targetItem ? (targetItem.sourceSheet || "Records") : "Records"
+      };
+
+      try {
+        alert("সেভ করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...");
+        let res = await fetch(WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify(formData)
+        });
+        let result = await res.json();
+
+        if (result.status === "success") {
+          alert("সফলভাবে সম্পন্ন হয়েছে!");
+          resetForm();
+          fetchAllData();
+        } else {
+          alert(result.message || "সেভ করতে সমস্যা হয়েছে।");
+        }
+      } catch (error) {
+        console.error("ত্রুটি:", error);
+        alert("সার্ভারে সংযোগ স্থাপন করা যায়নি।");
+      }
+    }
+
+    function editData(index) {
+      let item = globalDataList[index];
+      document.getElementById('officeInput').value = item.officeName;
+      document.getElementById('userIdInput').value = item.userId;
+      document.getElementById('designationInput').value = item.postDesignation;
+      document.getElementById('postCountInput').value = item.postCount;
+      document.getElementById('linkInput').value = item.linkUrl;
+      document.getElementById('smsInput').value = item.smsInfo;
+      document.getElementById('examStatusInput').value = item.examStatus;
+
+      document.getElementById('editIndex').value = index;
+      document.getElementById('formTitle').innerText = "তথ্য এডিট করুন";
+      document.getElementById('saveBtn').innerText = "আপডেট করুন";
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function deleteData(index) {
+      if (!currentPhone) return;
+      if (confirm("আপনি কি নিশ্চিতভাবে এই তথ্যটি মুছে ফেলতে চান?")) {
+        let targetItem = globalDataList[index];
+        let formData = {
+          action: "delete",
+          phone: currentPhone,
+          rowIndex: targetItem.rowIndex,
+          sourceSheet: targetItem.sourceSheet || "Records"
+        };
+        try {
+          alert("মুছে ফেলা হচ্ছে, অপেক্ষা করুন...");
+          let res = await fetch(WEB_APP_URL, {
+            method: "POST",
+            body: JSON.stringify(formData)
+          });
+          let result = await res.json();
+
+          if (result.status === "success") {
+            alert("তথ্যটি সফলভাবে মুছে ফেলা হয়েছে!");
+            fetchAllData();
+          } else {
+            alert(result.message || "ডিলিট করতে সমস্যা হয়েছে।");
+          }
+        } catch (error) {
+          console.error("মুছে ফেলতে ত্রুটি:", error);
+        }
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('officeInput').value = "";
+      document.getElementById('userIdInput').value = "";
+      document.getElementById('designationInput').value = "";
+      document.getElementById('postCountInput').value = "";
+      document.getElementById('linkInput').value = "";
+      document.getElementById('smsInput').value = "";
+      document.getElementById('examStatusInput').value = "পরীক্ষা হচ্ছে";
+      document.getElementById('editIndex').value = "-1";
+      document.getElementById('formTitle').innerText = "নতুন তথ্য যোগ করুন";
+      document.getElementById('saveBtn').innerText = "গুগল শিটে সেভ করুন";
+    }
+
+    function searchData() {
+      let input = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (input === "") {
+        displayResults(globalDataList);
+        return;
+      }
+      let filteredResults = globalDataList.filter(item =>
+        item.officeName.toLowerCase().includes(input)
+      );
+      displayResults(filteredResults);
+    }
+
+    function displayResults(results) {
+      let container = document.getElementById('resultContainer');
+      container.innerHTML = "";
+
+      if (results && results.length > 0) {
+        results.forEach((item) => {
+          let originalIndex = globalDataList.indexOf(item);
+          let linkHtml = item.linkUrl ? `<p><strong>Link:</strong> <a href="${item.linkUrl}" target="_blank">${item.linkUrl}</a></p>` : "";
+          let statusClass = "status-ongoing";
+          if (item.examStatus === "পরীক্ষা হয়নি") statusClass = "status-not";
+          else if (item.examStatus === "পরীক্ষা স্থগিত") statusClass = "status-postponed";
+
+          container.innerHTML += `
+            <div class="card">
+              <h3>${item.officeName}</h3>
+              <p><strong>User ID:</strong> ${item.userId}</p>
+              <p><strong>পদবি নাম:</strong> ${item.postDesignation}</p>
+              <p><strong>পদ সংখ্যা:</strong> ${item.postCount}</p>
+              ${linkHtml}
+              <p><strong>SMS Information:</strong> ${item.smsInfo}</p>
+              <p><strong>পরীক্ষার অবস্থা:</strong> <span class="status-badge ${statusClass}">${item.examStatus}</span></p>
+              <div class="action-buttons">
+                <button class="btn-edit" onclick="editData(${originalIndex})">এডিট করুন</button>
+                <button class="btn-delete" onclick="deleteData(${originalIndex})">ডিলিট করুন</button>
+              </div>
+            </div>
+          `;
+        });
+      } else {
+        container.innerHTML = `<div class="no-result">কোনো তথ্য পাওয়া যায়নি!</div>`;
+      }
+    }
+  </script>
+
+</body>
+</html>
